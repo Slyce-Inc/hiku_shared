@@ -31,3 +31,11 @@ v3.1.5 (February 24th, 2015 PST):
 v3.1.6 (March 6th, 2015 PST):
 - Fixed long text getting truncated in the "Tips" flow on devices smaller than
   the iPhone 5
+
+v3.1.7 (March 12th, 2015 PST):
+- Fixed some French-localized strings
+- Added a new delegate method to the SDK that is fired when a user completes the
+  tips/onboarding tutorial (more details in the documentation)
+- Fixed UI anomalies introduced when the in-call status bar is present
+- Fixed the status bar sporadically showing when the client application has it
+  hidden

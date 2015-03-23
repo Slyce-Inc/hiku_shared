@@ -28,6 +28,7 @@ typedef enum : NSUInteger {
 @property (strong, nonatomic) NSString* shared;
 @property (strong, nonatomic) NSString* email;
 @property (strong, nonatomic) UIImage* partner_logo;
+@property (nonatomic, setter=setShowStatusBar:) BOOL show_status_bar;
 @property (strong, nonatomic) id<HKSetupDelegate> delegate;
 
 + (HKSetupSDK *)instance;
@@ -35,8 +36,9 @@ typedef enum : NSUInteger {
 //     @{
 //         @"app_id" : <NSString>, // mandatory
 //         @"shared_secret" : <NSString>, // mandatory
-//         @"email" : <NSString>, // optional
-//         @"partner_logo" : <UIImage> // optional
+//         @"email" : <NSString>, // optional, defaulted to @""
+//         @"partner_logo" : <UIImage>, // optional, defaulted to nil
+//         @"show_status_bar" : <BOOL> // optional, defaulted to YES
 //      }
 - (id)initWithParameters:(NSDictionary *)sdkParameters;
 - (id)initWithAppId:(NSString *)app_id shared:(NSString *)shared email:(NSString* )email;
@@ -55,4 +57,5 @@ typedef enum : NSUInteger {
 - (void) userAuthenticationStatus:(BOOL)success sdk:(HKSetupSDK *)sdk;
 - (void) deviceSetupStatus:(BOOL)success sdk:(HKSetupSDK *)sdk;
 - (void) userCancelledSetup:(HKSetupSDK *)sdk;
+- (void) userCompletedTutorial:(HKSetupSDK *)sdk;
 @end

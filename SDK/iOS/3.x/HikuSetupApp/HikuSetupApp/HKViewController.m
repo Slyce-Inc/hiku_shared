@@ -16,6 +16,8 @@
 
 @interface HKViewController () <HKSetupDelegate>
 @property (strong, nonatomic) HKSetupSDK* sdk;
+@property (nonatomic) BOOL shouldHideStatusBar;
+@property (strong, nonatomic) UIButton* buttonToggleStatusBar;
 @property (strong, nonatomic) UIButton* buttonStart;
 @property (strong, nonatomic) UIButton* buttonLogout;
 @property (strong, nonatomic) UIButton* buttonTips;
@@ -51,6 +53,14 @@
     [self.view addSubview:presentationStylePicker];
 
     y += presentationStylePicker.frame.size.height + 10;
+
+    self.shouldHideStatusBar = [UIApplication sharedApplication].statusBarHidden;
+    self.buttonToggleStatusBar = [self createButton:@"Toggle status bar" selector:@selector(buttonHandler:)];
+    self.buttonToggleStatusBar.frame = CGRectMake(x, y, width, height);
+
+    [self.view addSubview:self.buttonToggleStatusBar];
+
+    y += height + 10;
 
     self.buttonStart = [self createButton:@"Start Setup" selector:@selector(buttonHandler:)];
     self.buttonStart.frame = CGRectMake(x, y, width, height);
@@ -130,8 +140,16 @@
     {
         [_sdk launchTipsFlow:[UIApplication sharedApplication].delegate.window.rootViewController withPresentationStyle:_pickedPresentationStyle];
     }
+    else if (sender == self.buttonToggleStatusBar) {
+        self.shouldHideStatusBar = !self.shouldHideStatusBar;
+        _sdk.show_status_bar = !self.shouldHideStatusBar;
+        [self setNeedsStatusBarAppearanceUpdate];
+    }
 }
 
+- (BOOL)prefersStatusBarHidden {
+    return self.shouldHideStatusBar;
+}
 
 - (void)didReceiveMemoryWarning
 {
@@ -144,7 +162,13 @@
     [super viewDidAppear:animated];
 
     _sdk = [[HKSetupSDK alloc] initWithAppId:APPID shared:SHARED email:EMAIL];
+    _sdk.show_status_bar = !self.shouldHideStatusBar;
     _sdk.delegate = self;
+}
+
+- (void) userCompletedTutorial:(HKSetupSDK *)sdk
+{
+    NSLog(@"User completed the tutorial!");
 }
 
 - (void) userCancelledSetup:(HKSetupSDK *)sdk
