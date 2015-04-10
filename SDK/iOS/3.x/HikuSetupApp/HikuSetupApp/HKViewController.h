@@ -9,10 +9,8 @@
 #import <HKSetupSDKFramework/include/HKSetupSDK/HKSetupSDK.h>
 
 
-@interface HKViewController : UIViewController <UIPickerViewDataSource, UIPickerViewDelegate>
+@interface HKViewController : UIViewController
 
-@property (nonatomic) NSInteger selectedPickerRow;
-@property (strong, nonatomic) UIPickerView *presentationStylePicker;
 @property (nonatomic) SDKHKPresentationStyle pickedPresentationStyle;
 
 @end

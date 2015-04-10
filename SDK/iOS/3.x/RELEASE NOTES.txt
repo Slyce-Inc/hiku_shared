@@ -39,3 +39,17 @@ v3.1.7 (March 12th, 2015 PST):
 - Fixed UI anomalies introduced when the in-call status bar is present
 - Fixed the status bar sporadically showing when the client application has it
   hidden
+
+v3.2.0 (April 8th, 2015 PST):
+- Fixed the user needing to re-enter their Hiku email address everytime they restart
+  the client application
+- Added the newest version of the BlinkUp SDK to fix various BlinkUp-related issues
+- Added the UICKeyChainStore library as a third-party dependency (more details in the
+  documentation)
+- Redesigned the setup app to encompass all possible SDK configuration parameters
+- Redesigned the device setup flow to make it easier to connect a hiku using the client
+  application
+- Added contextual support for the most common failure cases to make it easier to
+  diagnose setup- and/or onboarding-related problems
+- Added no-network alerts if the user of the client application loses internet
+  connectivity and tries to interact with UI elements requiring internet

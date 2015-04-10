@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		44110AF81AC299A5000BEC11 /* UICKeyChainStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 44110AF71AC299A5000BEC11 /* UICKeyChainStore.m */; };
 		4419ED0B1A620B5E0082AC85 /* libFlurry_5.4.0.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4419ED041A620B5E0082AC85 /* libFlurry_5.4.0.a */; };
 		4419ED0C1A620B5E0082AC85 /* NSData+Base64.m in Sources */ = {isa = PBXBuildFile; fileRef = 4419ED061A620B5E0082AC85 /* NSData+Base64.m */; };
 		4419ED0D1A620B5E0082AC85 /* nv_ios_http_status.m in Sources */ = {isa = PBXBuildFile; fileRef = 4419ED081A620B5E0082AC85 /* nv_ios_http_status.m */; };
@@ -132,6 +133,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		44110AF61AC299A5000BEC11 /* UICKeyChainStore.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UICKeyChainStore.h; sourceTree = "<group>"; };
+		44110AF71AC299A5000BEC11 /* UICKeyChainStore.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = UICKeyChainStore.m; sourceTree = "<group>"; };
 		4419ED041A620B5E0082AC85 /* libFlurry_5.4.0.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libFlurry_5.4.0.a; sourceTree = "<group>"; };
 		4419ED061A620B5E0082AC85 /* NSData+Base64.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSData+Base64.m"; sourceTree = "<group>"; };
 		4419ED081A620B5E0082AC85 /* nv_ios_http_status.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = nv_ios_http_status.m; sourceTree = "<group>"; };
@@ -360,6 +363,16 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		44110AF51AC299A4000BEC11 /* UICKeyChainStore */ = {
+			isa = PBXGroup;
+			children = (
+				44110AF61AC299A5000BEC11 /* UICKeyChainStore.h */,
+				44110AF71AC299A5000BEC11 /* UICKeyChainStore.m */,
+			);
+			name = UICKeyChainStore;
+			path = Framework/UICKeyChainStore;
+			sourceTree = "<group>";
+		};
 		4419ED031A620B5E0082AC85 /* Flurry */ = {
 			isa = PBXGroup;
 			children = (
@@ -622,6 +635,7 @@
 		E5B0D71219F1BA6C00DE548C /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				44110AF51AC299A4000BEC11 /* UICKeyChainStore */,
 				44439BF51A8C75B4007A0D3D /* SocketRocket */,
 				441A55471A67763700286380 /* Mixpanel */,
 				4419ED031A620B5E0082AC85 /* Flurry */,
@@ -890,6 +904,7 @@
 				441A55DD1A67763700286380 /* MPCGPointToNSDictionaryValueTransformer.m in Sources */,
 				441A55FF1A67763700286380 /* MPUIColorToNSStringValueTransformer.m in Sources */,
 				441A55E41A67763700286380 /* MPDesignerEventBindingResponseMesssage.m in Sources */,
+				44110AF81AC299A5000BEC11 /* UICKeyChainStore.m in Sources */,
 				441A55FC1A67763700286380 /* MPTweakInline.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1020,7 +1035,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
-				PROVISIONING_PROFILE = "3D2046DE-4600-42D0-841C-F18675A6626E";
+				PROVISIONING_PROFILE = "57850024-e803-42ee-b8dd-dfed637b6a99";
 				SDKROOT = iphoneos;
 				VALIDATE_PRODUCT = YES;
 				VALID_ARCHS = "arm64 armv7";
@@ -1080,7 +1095,7 @@
 				);
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE = "3D2046DE-4600-42D0-841C-F18675A6626E";
+				PROVISIONING_PROFILE = "57850024-e803-42ee-b8dd-dfed637b6a99";
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALID_ARCHS = "arm64 armv7";
 				WRAPPER_EXTENSION = app;

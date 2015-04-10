@@ -11,55 +11,57 @@
 /**
  *  Collection of arrays that can be used for parameters based on NSString format
  *   in the .strings localization files
- * 
- 
- @code
- //Example .strings text
- "GlobalFooter" = @"%@ is logged in";
- 
- //Example setting of parameter for the format string
- blinkUpController.strings.globalFooter = @[@"Joe User"];
- @endcode
+ *
+
+   @code
+   //Example .strings text
+   "GlobalFooter" = @"%@ is logged in";
+
+   //Example setting of parameter for the format string
+   blinkUpController.strings.globalFooter = @[@"Joe User"];
+   @endcode
  */
-@interface BlinkUpStringFormatParameters: NSObject
+@interface BlinkUpStringFormatParameters : NSObject
 
 //BlinkUpSDK.strings
-@property (nonatomic, strong) NSArray * globalTitle;
-@property (nonatomic, strong) NSArray * globalFooter;
-@property (nonatomic, strong) NSArray * interstitialContinue;
-@property (nonatomic, strong) NSArray * preflashText;
-@property (nonatomic, strong) NSArray * wifiDetailInstructions;
-@property (nonatomic, strong) NSArray * wifiDetailNetwork;
-@property (nonatomic, strong) NSArray * wifiDetailNetworkPlaceholder;
-@property (nonatomic, strong) NSArray * wifiDetailPassword;
-@property (nonatomic, strong) NSArray * wifiDetailPasswordPlaceholder;
-@property (nonatomic, strong) NSArray * wifiDetailRememberPassword;
-@property (nonatomic, strong) NSArray * wifiDetailSendBlinkUp;
-@property (nonatomic, strong) NSArray * wifiSettingsCancel;
-@property (nonatomic, strong) NSArray * wifiSettingsClearWirelessConfiguration;
-@property (nonatomic, strong) NSArray * wifiSettingsConnectAnImp;
-@property (nonatomic, strong) NSArray * wifiSettingsConnectUsingWPS;
-@property (nonatomic, strong) NSArray * wifiSettingsDisconnectAnImp;
-@property (nonatomic, strong) NSArray * wifiSettingsOtherNetwork;
-@property (nonatomic, strong) NSArray * wpsDetailInformation;
-@property (nonatomic, strong) NSArray * wpsDetailSendBlinkUp;
-@property (nonatomic, strong) NSArray * wpsDetailInstructions;
-@property (nonatomic, strong) NSArray * wpsDetailWPSPIN;
-@property (nonatomic, strong) NSArray * wpsDetailWPSPINPlaceholder;
+@property (nonatomic, copy) NSArray *globalTitle;
+@property (nonatomic, copy) NSArray *globalFooter;
+@property (nonatomic, copy) NSArray *interstitialContinue;
+@property (nonatomic, copy) NSArray *preflashText;
+@property (nonatomic, copy) NSArray *wifiDetailHidePassword;
+@property (nonatomic, copy) NSArray *wifiDetailInstructions;
+@property (nonatomic, copy) NSArray *wifiDetailNetwork;
+@property (nonatomic, copy) NSArray *wifiDetailNetworkPlaceholder;
+@property (nonatomic, copy) NSArray *wifiDetailPassword;
+@property (nonatomic, copy) NSArray *wifiDetailPasswordPlaceholder;
+@property (nonatomic, copy) NSArray *wifiDetailRememberPassword;
+@property (nonatomic, copy) NSArray *wifiDetailSendBlinkUp;
+@property (nonatomic, copy) NSArray *wifiDetailShowPassword;
+@property (nonatomic, copy) NSArray *wifiSettingsCancel;
+@property (nonatomic, copy) NSArray *wifiSettingsClearWirelessConfiguration;
+@property (nonatomic, copy) NSArray *wifiSettingsConnectAnImp;
+@property (nonatomic, copy) NSArray *wifiSettingsConnectUsingWPS;
+@property (nonatomic, copy) NSArray *wifiSettingsDisconnectAnImp;
+@property (nonatomic, copy) NSArray *wifiSettingsOtherNetwork;
+@property (nonatomic, copy) NSArray *wpsDetailInformation;
+@property (nonatomic, copy) NSArray *wpsDetailSendBlinkUp;
+@property (nonatomic, copy) NSArray *wpsDetailInstructions;
+@property (nonatomic, copy) NSArray *wpsDetailWPSPIN;
+@property (nonatomic, copy) NSArray *wpsDetailWPSPINPlaceholder;
 
 
 //BlinkUpError.strings
-@property (nonatomic, strong) NSArray * badApiKey;
-@property (nonatomic, strong) NSArray * badFlashPacket;
-@property (nonatomic, strong) NSArray * badPlanId;
-@property (nonatomic, strong) NSArray * badSetupToken;
-@property (nonatomic, strong) NSArray * emptySsid;
-@property (nonatomic, strong) NSArray * errorAlertButton;
-@property (nonatomic, strong) NSArray * errorAlertMessage;
-@property (nonatomic, strong) NSArray * errorAlertTitle;
-@property (nonatomic, strong) NSArray * failedGettingPlanIdFromServer;
-@property (nonatomic, strong) NSArray * networkErrorDuringImpPoll;
-@property (nonatomic, strong) NSArray * setupTokenFailure;
-@property (nonatomic, strong) NSArray * statusUpdateTimedOut;
+@property (nonatomic, copy) NSArray *badApiKey;
+@property (nonatomic, copy) NSArray *badFlashPacket;
+@property (nonatomic, copy) NSArray *badPlanId;
+@property (nonatomic, copy) NSArray *badSetupToken;
+@property (nonatomic, copy) NSArray *emptySsid;
+@property (nonatomic, copy) NSArray *errorAlertButton;
+@property (nonatomic, copy) NSArray *errorAlertMessage;
+@property (nonatomic, copy) NSArray *errorAlertTitle;
+@property (nonatomic, copy) NSArray *failedGettingPlanIdFromServer;
+@property (nonatomic, copy) NSArray *networkErrorDuringImpPoll;
+@property (nonatomic, copy) NSArray *setupTokenFailure;
+@property (nonatomic, copy) NSArray *statusUpdateTimedOut;
 
 @end
