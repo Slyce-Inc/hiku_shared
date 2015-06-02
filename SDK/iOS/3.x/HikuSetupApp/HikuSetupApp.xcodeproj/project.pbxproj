@@ -111,7 +111,6 @@
 		E5B0D71E19F1BA6C00DE548C /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = E5B0D71C19F1BA6C00DE548C /* InfoPlist.strings */; };
 		E5B0D72019F1BA6C00DE548C /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = E5B0D71F19F1BA6C00DE548C /* main.m */; };
 		E5B0D72419F1BA6C00DE548C /* HKAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = E5B0D72319F1BA6C00DE548C /* HKAppDelegate.m */; };
-		E5B0D72719F1BA6C00DE548C /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E5B0D72519F1BA6C00DE548C /* Main.storyboard */; };
 		E5B0D72C19F1BA6C00DE548C /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E5B0D72B19F1BA6C00DE548C /* Images.xcassets */; };
 		E5B0D73419F1BA6C00DE548C /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E5B0D71319F1BA6C00DE548C /* Foundation.framework */; };
 		E5B0D73519F1BA6C00DE548C /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E5B0D71719F1BA6C00DE548C /* UIKit.framework */; };
@@ -304,7 +303,6 @@
 		44928DD71A00E67A00CC223B /* HKSetupSDKFramework.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = HKSetupSDKFramework.framework; sourceTree = "<group>"; };
 		44928DFE1A01A3FF00CC223B /* HikuSetupApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HikuSetupApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		44928DFF1A01A3FF00CC223B /* HikuSetupAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HikuSetupAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		44928E0B1A01B9D300CC223B /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/Main.strings; sourceTree = "<group>"; };
 		44A3FF8D1A120FBF00E5BB09 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/BlinkUpSDK.strings; sourceTree = "<group>"; };
 		44A3FF8F1A120FC800E5BB09 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/BlinkUpSDK.strings; sourceTree = "<group>"; };
 		44DF78551A0B360F009B244C /* BlinkUp.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = BlinkUp.framework; sourceTree = "<group>"; };
@@ -318,7 +316,6 @@
 		E5B0D72119F1BA6C00DE548C /* HikuSetupApp-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "HikuSetupApp-Prefix.pch"; sourceTree = "<group>"; };
 		E5B0D72219F1BA6C00DE548C /* HKAppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HKAppDelegate.h; sourceTree = "<group>"; };
 		E5B0D72319F1BA6C00DE548C /* HKAppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HKAppDelegate.m; sourceTree = "<group>"; };
-		E5B0D72619F1BA6C00DE548C /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		E5B0D72B19F1BA6C00DE548C /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		E5B0D73A19F1BA6C00DE548C /* HikuSetupAppTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "HikuSetupAppTests-Info.plist"; sourceTree = "<group>"; };
 		E5B0D73C19F1BA6C00DE548C /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
@@ -666,7 +663,6 @@
 				E5B0D75319F1BBF800DE548C /* HKViewController.m */,
 				E5B0D72219F1BA6C00DE548C /* HKAppDelegate.h */,
 				E5B0D72319F1BA6C00DE548C /* HKAppDelegate.m */,
-				E5B0D72519F1BA6C00DE548C /* Main.storyboard */,
 				E5B0D72B19F1BA6C00DE548C /* Images.xcassets */,
 				E5B0D71A19F1BA6C00DE548C /* Supporting Files */,
 			);
@@ -803,7 +799,6 @@
 				441A55E91A67763700286380 /* MPNotification.storyboard in Resources */,
 				E5B0D72C19F1BA6C00DE548C /* Images.xcassets in Resources */,
 				E5B0D71E19F1BA6C00DE548C /* InfoPlist.strings in Resources */,
-				E5B0D72719F1BA6C00DE548C /* Main.storyboard in Resources */,
 				441A55E11A67763700286380 /* MPCloseBtn.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -944,15 +939,6 @@
 				E5B0D71D19F1BA6C00DE548C /* en */,
 			);
 			name = InfoPlist.strings;
-			sourceTree = "<group>";
-		};
-		E5B0D72519F1BA6C00DE548C /* Main.storyboard */ = {
-			isa = PBXVariantGroup;
-			children = (
-				E5B0D72619F1BA6C00DE548C /* Base */,
-				44928E0B1A01B9D300CC223B /* fr */,
-			);
-			name = Main.storyboard;
 			sourceTree = "<group>";
 		};
 		E5B0D73B19F1BA6C00DE548C /* InfoPlist.strings */ = {
