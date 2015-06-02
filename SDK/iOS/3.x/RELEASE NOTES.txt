@@ -53,3 +53,12 @@ v3.2.0 (April 8th, 2015 PST):
   diagnose setup- and/or onboarding-related problems
 - Added no-network alerts if the user of the client application loses internet
   connectivity and tries to interact with UI elements requiring internet
+
+v3.2.1 (June 1st, 2015 PST):
+- Minor UI enhancements that better notify users under poor network conditions
+- Stylized buttons to look more like buttons
+- Added a full-screen spinning indicator to the "Wait for flashing to stop" screen
+  after the user taps the "Next" button (to guard against a crash that can occur
+  when quickly double-tapping the button)
+- Fixed some UI bugs that manifest when backgrounding then foregrounding the application
+- Fixed some French-localized strings
