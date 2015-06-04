@@ -5,14 +5,18 @@
 //  Created by Rajan Bala on 10/17/14.
 //  Copyright (c) 2014 hiku labs, inc. All rights reserved.
 //
-
+#import "HKViewController.h"
 #import "HKAppDelegate.h"
 
 @implementation HKAppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
+    self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
     // Override point for customization after application launch.
+    self.rootViewController = [[HKViewController alloc] init];
+    self.window.rootViewController = self.rootViewController;
+    [self.window makeKeyAndVisible];
     return YES;
 }
 							
