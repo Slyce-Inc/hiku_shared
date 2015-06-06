@@ -62,3 +62,8 @@ v3.2.1 (June 1st, 2015 PST):
   when quickly double-tapping the button)
 - Fixed some UI bugs that manifest when backgrounding then foregrounding the application
 - Fixed some French-localized strings
+
+v3.2.2 (June 5th, 2015 PST):
+- Fixed the overlapping of the epilepsy warning on the "Wait for flashing to stop" screen
+  that can occur in certain situations
+- Minor UI enhancements
