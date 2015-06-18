@@ -71,3 +71,6 @@ v3.2.2 (June 5th, 2015 PST):
 v3.2.3 (June 15th, 2015 PST):
 - Locked the SDK interface orientation to portrait only (supports both bottom and top home
   button styles) since landscape orientations are not supported at this time
+
+v3.2.4 (June 18th, 2015 PST):
+- Shortened the pre-BlinkUp time
