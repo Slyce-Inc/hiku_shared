@@ -1,0 +1,36 @@
+<resources>
+
+    <!--<style name="AppBaseTheme" parent="Theme.AppCompat.Light">-->
+        <!--&lt;!&ndash; API 11 theme customizations can go here. &ndash;&gt;-->
+        <!--<item name="android:actionBarStyle">@style/MyActionBar</item>-->
+
+        <!--&lt;!&ndash; Support library compatibility &ndash;&gt;-->
+        <!--<item name="actionBarStyle">@style/MyActionBar</item>-->
+    <!--</style>-->
+
+    <!--&lt;!&ndash; ActionBar styles &ndash;&gt;-->
+    <!--<style name="MyActionBar"-->
+        <!--parent="@style/Widget.AppCompat.Light.ActionBar.Solid.Inverse">-->
+        <!--<item name="android:background">@color/hikuGreen</item>-->
+        <!--<item name="android:icon">@android:color/transparent</item>-->
+        <!--<item name="android:popupMenuStyle">@style/PopupMenu</item>-->
+        <!--<item name="android:titleTextStyle">@style/MyActionBarTitleText</item>-->
+
+        <!--&lt;!&ndash; Support library compatibility &ndash;&gt;-->
+        <!--<item name="titleTextStyle">@style/MyActionBarTitleText</item>-->
+
+    <!--</style>-->
+    <!--&lt;!&ndash; background color for Action Bar overflow menu &ndash;&gt;-->
+    <!--<style name="PopupMenu" parent="@style/Widget.AppCompat.Light.PopupMenu">-->
+        <!--<item name="android:popupBackground">@drawable/menu_dropdown_panel</item>-->
+    <!--</style>-->
+
+    <!--<style name="MyActionBarTitleText"-->
+        <!--parent="@style/TextAppearance.AppCompat.Widget.ActionBar.Title">-->
+        <!--<item name="android:textColor">@android:color/white</item>-->
+        <!--<item name="android:textSize">20sp</item>-->
+        <!--<item name="android:textStyle">bold</item>-->
+        <!--&lt;!&ndash; The textColor property is backward compatible with the Support Library &ndash;&gt;-->
+    <!--</style>-->
+
+</resources>

@@ -1,0 +1,30 @@
+<resources>
+    <style name="AppBaseTheme" parent="android:Theme.Light">
+    </style>
+
+    <!-- Application theme. -->
+    <style name="AppTheme" parent="AppBaseTheme">
+        <item name="android:textSize">20sp</item>
+        <!--  <item name="android:textColor">@color/navGray</item>  -->
+        <item name="android:textAppearance">?android:attr/textAppearanceMedium</item>
+        <item name="android:windowBackground">@color/whiteBackground</item>
+        <item name="android:actionMenuTextColor">@android:color/white</item>
+        <item name="android:spinnerItemStyle">@style/mySpinnerItemStyle</item>
+    </style>
+
+    <!-- Widget.Holo.Light.DropDownItem.Spinner -->
+    <!-- parent="Widget.AppCompat.Spinner.DropDown" -->
+    <style name="mySpinnerItemStyle" >
+        <item name="android:textColor">@color/hikuGray</item>
+        <item name="android:minHeight">30sp</item>
+    </style>
+
+<!-- Widget.AppCompat.DropDownItem.Spinner -->
+    <style name="mySpinnerItemStyle2" parent="android:Widget.DropDownItem.Spinner">
+        <item name="android:textColor">@color/hikuGray</item>
+        <item name="android:colorBackground">@color/hikuRed</item>
+        <item name="android:background">@color/hikuGreen</item>
+        <item name="android:textSize">12sp</item>
+    </style>
+
+</resources>
