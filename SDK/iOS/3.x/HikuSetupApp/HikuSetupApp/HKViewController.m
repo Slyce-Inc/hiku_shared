@@ -13,17 +13,20 @@
 #define SHARED @"<shared_secret_here>"
 
 #define EMAIL_PLACEHOLDER @"Enter email"
+#define PASSWORD_PLACEHOLDER @"Enter password"
 #define FIELD_WIDTH 260
 
-@interface HKViewController () <HKSetupDelegate>
+@interface HKViewController () <HKSetupDelegate, UITextFieldDelegate>
 @property (strong, nonatomic) HKSetupSDK* sdk;
 @property (nonatomic) BOOL shouldHideStatusBar;
 @property (strong, nonatomic) UIButton* buttonToggleStatusBar;
+@property (strong, nonatomic) UIButton* createOrLogin;
 @property (strong, nonatomic) UIButton* buttonStartWithLogo;
 @property (strong, nonatomic) UIButton* buttonStartNoLogo;
 @property (strong, nonatomic) UIButton* buttonLogout;
 @property (strong, nonatomic) UIButton* buttonTips;
 @property (strong, nonatomic) UITextField* emailField;
+@property (strong, nonatomic) UITextField* passwordField;
 @property (strong, nonatomic) UISwitch *emailOffersSwitch;
 @property (strong, nonatomic) UISwitch *callbackSwitch;
 @property (strong, nonatomic) UISwitch *modalSwitch;
@@ -32,15 +35,26 @@
 
 @implementation HKViewController
 
-- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
+- (void)hideKeyboard:(id)sender
 {
     [self.view endEditing:YES];
-    [super touchesBegan:touches withEvent:event];
+}
+
+- (BOOL)textFieldShouldReturn:(UITextField *)textField
+{
+    [self hideKeyboard:nil];
+    return YES;
 }
 
 - (void)viewDidLoad
 {
     [super viewDidLoad];
+
+    UIScrollView* scrollView = [[UIScrollView alloc] initWithFrame:self.view.frame];
+    scrollView.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleTopMargin;
+
+    UITapGestureRecognizer* gestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(hideKeyboard:)];
+    [scrollView addGestureRecognizer:gestureRecognizer];
 
     self.view.backgroundColor = [UIColor whiteColor];
     self.edgesForExtendedLayout = UIRectEdgeNone;
@@ -59,13 +73,13 @@
     callbackLabel.textColor = [UIColor colorWithRed:(0/255.0) green:(110/255.0) blue:(1/255.0) alpha:(255/255.0)];
     callbackLabel.font = [UIFont systemFontOfSize:14];
 
-    [self.view addSubview:callbackLabel];
+    [scrollView addSubview:callbackLabel];
 
     self.callbackSwitch = [[UISwitch alloc] initWithFrame:CGRectMake(callbackLabel.frame.origin.x + callbackLabel.frame.size.width + 35, y - 3, 0, 0)];
     self.callbackSwitch.onTintColor = [UIColor colorWithRed:(0/255.0) green:(110/255.0) blue:(1/255.0) alpha:(255/255.0)];
-    self.callbackSwitch.on = NO;
+    self.callbackSwitch.on = YES;
 
-    [self.view addSubview:self.callbackSwitch];
+    [scrollView addSubview:self.callbackSwitch];
 
     y += height + 10;
 
@@ -74,14 +88,14 @@
     modalLabel.textColor = [UIColor colorWithRed:(0/255.0) green:(110/255.0) blue:(1/255.0) alpha:(255/255.0)];
     modalLabel.font = [UIFont systemFontOfSize:14];
 
-    [self.view addSubview:modalLabel];
+    [scrollView addSubview:modalLabel];
 
     self.modalSwitch = [[UISwitch alloc] initWithFrame:CGRectMake(modalLabel.frame.origin.x + modalLabel.frame.size.width + 35, y - 3, 0, 0)];
     [self.modalSwitch addTarget:self action:@selector(togglePresentationStyle:) forControlEvents:UIControlEventValueChanged];
     self.modalSwitch.onTintColor = [UIColor colorWithRed:(0/255.0) green:(110/255.0) blue:(1/255.0) alpha:(255/255.0)];
     self.modalSwitch.on = (self.pickedPresentationStyle == SDKHKPRESENTATION_MODAL);
 
-    [self.view addSubview:self.modalSwitch];
+    [scrollView addSubview:self.modalSwitch];
 
     y += height + 10;
 
@@ -90,14 +104,14 @@
     pushLabel.textColor = [UIColor colorWithRed:(0/255.0) green:(110/255.0) blue:(1/255.0) alpha:(255/255.0)];
     pushLabel.font = [UIFont systemFontOfSize:14];
 
-    [self.view addSubview:pushLabel];
+    [scrollView addSubview:pushLabel];
 
     self.pushSwitch = [[UISwitch alloc] initWithFrame:CGRectMake(modalLabel.frame.origin.x + modalLabel.frame.size.width + 35, y - 3, 0, 0)];
     [self.pushSwitch addTarget:self action:@selector(togglePresentationStyle:) forControlEvents:UIControlEventValueChanged];
     self.pushSwitch.onTintColor = [UIColor colorWithRed:(0/255.0) green:(110/255.0) blue:(1/255.0) alpha:(255/255.0)];
     self.pushSwitch.on = (self.pickedPresentationStyle == SDKHKPRESENTATION_PUSH);
 
-    [self.view addSubview:self.pushSwitch];
+    [scrollView addSubview:self.pushSwitch];
 
     y += height + 10;
 
@@ -106,18 +120,34 @@
     self.buttonToggleStatusBar.frame = CGRectMake(x, y, width, height);
     self.buttonToggleStatusBar.backgroundColor = [UIColor colorWithRed:(0/255.0) green:(110/255.0) blue:(1/255.0) alpha:(255/255.0)];
 
-    [self.view addSubview:self.buttonToggleStatusBar];
+    [scrollView addSubview:self.buttonToggleStatusBar];
 
     y += height + 30;
 
     self.emailField = [[UITextField alloc] initWithFrame:CGRectMake(x, y, width, height)];
+    self.emailField.delegate = self;
     self.emailField.layer.cornerRadius = 5;
     self.emailField.layer.borderWidth = 1.0;
     self.emailField.layer.borderColor = [UIColor colorWithRed:(58/255.0) green:(144/255.0) blue:(222/255.0) alpha:0.5].CGColor;
     self.emailField.placeholder = EMAIL_PLACEHOLDER;
     self.emailField.textAlignment = NSTextAlignmentCenter;
+    self.emailField.autocapitalizationType = UITextAutocapitalizationTypeNone;
+    self.emailField.autocorrectionType = UITextAutocorrectionTypeNo;
 
-    [self.view addSubview:self.emailField];
+    [scrollView addSubview:self.emailField];
+
+    y += height + 10;
+
+    self.passwordField = [[UITextField alloc] initWithFrame:CGRectMake(x, y, width, height)];
+    self.passwordField.delegate = self;
+    self.passwordField.layer.cornerRadius = 5;
+    self.passwordField.layer.borderWidth = 1.0;
+    self.passwordField.layer.borderColor = [UIColor colorWithRed:(58/255.0) green:(144/255.0) blue:(222/255.0) alpha:0.5].CGColor;
+    self.passwordField.placeholder = PASSWORD_PLACEHOLDER;
+    self.passwordField.textAlignment = NSTextAlignmentCenter;
+    self.passwordField.secureTextEntry = YES;
+
+    [scrollView addSubview:self.passwordField];
 
     y += height + 10;
 
@@ -126,22 +156,30 @@
     emailOffersLabel.textColor = [UIColor colorWithRed:(58/255.0) green:(144/255.0) blue:(222/255.0) alpha:(255/255.0)];
     emailOffersLabel.font = [UIFont systemFontOfSize:14];
 
-    [self.view addSubview:emailOffersLabel];
+    [scrollView addSubview:emailOffersLabel];
 
     self.emailOffersSwitch = [[UISwitch alloc] initWithFrame:CGRectMake(emailOffersLabel.frame.origin.x + emailOffersLabel.frame.size.width + 35, y - 3, 0, 0)];
     [self.emailOffersSwitch addTarget:self action:@selector(toggleEmailOffers:) forControlEvents:UIControlEventValueChanged];
     self.emailOffersSwitch.onTintColor = [UIColor colorWithRed:(58/255.0) green:(144/255.0) blue:(222/255.0) alpha:(255/255.0)];
     self.emailOffersSwitch.on = YES;
 
-    [self.view addSubview:self.emailOffersSwitch];
+    [scrollView addSubview:self.emailOffersSwitch];
 
     y += height + 10;
+
+    self.createOrLogin = [self createButton:@"Create or login to an account\n(bypasses setup)" selector:@selector(buttonHandler:)];
+    self.createOrLogin.frame = CGRectMake(x, y, width, height * 2);
+    self.createOrLogin.backgroundColor = [UIColor colorWithRed:(58/255.0) green:(144/255.0) blue:(222/255.0) alpha:(255/255.0)];
+
+    [scrollView addSubview:self.createOrLogin];
+
+    y += (height * 2) + 10;
 
     self.buttonStartNoLogo = [self createButton:@"Start Setup" selector:@selector(buttonHandler:)];
     self.buttonStartNoLogo.frame = CGRectMake(x, y, width, height);
     self.buttonStartNoLogo.backgroundColor = [UIColor colorWithRed:(58/255.0) green:(144/255.0) blue:(222/255.0) alpha:(255/255.0)];
 
-    [self.view addSubview:self.buttonStartNoLogo];
+    [scrollView addSubview:self.buttonStartNoLogo];
 
     /*
     y += height + 10;
@@ -150,7 +188,7 @@
     self.buttonStartWithLogo.frame = CGRectMake(x, y, width, height);
     self.buttonStartWithLogo.backgroundColor = [UIColor colorWithRed:(58/255.0) green:(144/255.0) blue:(222/255.0) alpha:(255/255.0)];
 
-    [self.view addSubview:self.buttonStartWithLogo];
+    [scrollView addSubview:self.buttonStartWithLogo];
      */
 
     y += height + 30;
@@ -159,7 +197,7 @@
     self.buttonLogout.frame = CGRectMake(x, y, width, height);
     self.buttonLogout.backgroundColor = [UIColor colorWithRed:(128/255.0) green:(0/255.0) blue:(0/255.0) alpha:(255/255.0)];
 
-    [self.view addSubview:self.buttonLogout];
+    [scrollView addSubview:self.buttonLogout];
 
     y += height + 10;
 
@@ -167,9 +205,14 @@
     self.buttonTips.frame = CGRectMake(x, y, width, height);
     self.buttonTips.backgroundColor = [UIColor colorWithRed:(84/255.0) green:(35/255.0) blue:(126/255.0) alpha:(255/255.0)];
 
-    [self.view addSubview:self.buttonTips];
+    [scrollView addSubview:self.buttonTips];
+
+    y += height + 60;
 
 	// Do any additional setup after loading the view, typically from a nib.
+
+    scrollView.contentSize = CGSizeMake(scrollView.contentSize.width, y);
+    [self.view addSubview:scrollView];
 }
 
 - (void)toggleEmailOffers:(id)sender
@@ -221,6 +264,8 @@
     button.layer.cornerRadius = 5;
     button.titleLabel.font = [UIFont systemFontOfSize:14];
     button.titleLabel.textColor = [UIColor whiteColor];
+    button.titleLabel.numberOfLines = 0;
+    button.titleLabel.textAlignment = NSTextAlignmentCenter;
     [button setTitle:title forState:UIControlStateNormal];
     [button addTarget:self action:selector forControlEvents:UIControlEventTouchUpInside];
     return button;
@@ -231,6 +276,10 @@
     if (sender == self.buttonLogout)
     {
         [_sdk logoutUser];
+    }
+    else if (sender == self.createOrLogin)
+    {
+        [_sdk loginUserWithEmail:self.emailField.text password:self.passwordField.text];
     }
     else if (sender == self.buttonStartNoLogo)
     {
@@ -302,27 +351,27 @@
     }
 }
 
-- (void) userCompletedTutorial:(HKSetupSDK *)sdk
+- (void)userCompletedTutorial:(HKSetupSDK *)sdk
 {
-    [self logAndShowAlert:@"User completed the tutorial!"];
+    [self logAndShowAlert:@"User completed the tutorial"];
 }
 
-- (void) userCancelledSetup:(HKSetupSDK *)sdk
+- (void)userCancelledSetup:(HKSetupSDK *)sdk
 {
-    [self logAndShowAlert:@"User cancelled setup!"];
+    [self logAndShowAlert:@"User cancelled setup"];
 }
 
-- (void) applicationAuthorizationStatus:(BOOL)success sdk:(HKSetupSDK *)sdk
+- (void)applicationAuthorizationStatus:(BOOL)success sdk:(HKSetupSDK *)sdk
 {
     [self logAndShowAlert:[NSString stringWithFormat:@"Application authorization status: %@", success ? [NSString stringWithFormat:@"Success\n\nApp token is: %@", [sdk getApplicationTokenForUser]] : @"Failed"]];
 }
 
-- (void) userAuthenticationStatus:(BOOL)success sdk:(HKSetupSDK *)sdk
+- (void)userAuthenticationStatus:(BOOL)success sdk:(HKSetupSDK *)sdk
 {
     [self logAndShowAlert:[NSString stringWithFormat:@"User authentication status: %@", success ? @"Success" : @"Failed"]];
 }
 
-- (void) deviceSetupStatus:(BOOL)success sdk:(HKSetupSDK *)sdk
+- (void)deviceSetupStatus:(BOOL)success sdk:(HKSetupSDK *)sdk
 {
     [self logAndShowAlert:[NSString stringWithFormat:@"Device setup status: %@",success ? @"Success" : @"Failed"]];
 }
@@ -332,6 +381,11 @@
 - (void)logoutUser
 {
     [_sdk logoutUser];
+}
+
+- (void)userLoggedOut:(HKSetupSDK *)sdk
+{
+    [self logAndShowAlert:[NSString stringWithFormat:@"User logged out"]];
 }
 
 // Call the following function to explicitly initiate the tips flow for a user

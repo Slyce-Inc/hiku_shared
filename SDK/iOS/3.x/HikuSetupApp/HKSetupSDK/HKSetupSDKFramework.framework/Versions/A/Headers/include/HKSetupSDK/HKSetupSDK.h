@@ -44,6 +44,7 @@ typedef enum : NSUInteger {
 - (id)initWithAppId:(NSString *)app_id shared:(NSString *)shared email:(NSString* )email;
 - (void)startSetup:(UIViewController *)withViewController;
 - (void)startSetup:(UIViewController *)withViewController withPresentationStyle:(SDKHKPresentationStyle)presentationStyle;
+- (void)loginUserWithEmail:(NSString *)email password:(NSString *)password;
 - (void)logoutUser;
 - (NSString *)getApplicationTokenForUser;
 - (void)launchTipsFlow:(UIViewController *)withViewController;
@@ -53,9 +54,10 @@ typedef enum : NSUInteger {
 
 
 @protocol HKSetupDelegate <NSObject>
-- (void) applicationAuthorizationStatus:(BOOL)success sdk:(HKSetupSDK *)sdk;
-- (void) userAuthenticationStatus:(BOOL)success sdk:(HKSetupSDK *)sdk;
-- (void) deviceSetupStatus:(BOOL)success sdk:(HKSetupSDK *)sdk;
-- (void) userCancelledSetup:(HKSetupSDK *)sdk;
-- (void) userCompletedTutorial:(HKSetupSDK *)sdk;
+- (void)applicationAuthorizationStatus:(BOOL)success sdk:(HKSetupSDK *)sdk;
+- (void)userAuthenticationStatus:(BOOL)success sdk:(HKSetupSDK *)sdk;
+- (void)deviceSetupStatus:(BOOL)success sdk:(HKSetupSDK *)sdk;
+- (void)userCancelledSetup:(HKSetupSDK *)sdk;
+- (void)userCompletedTutorial:(HKSetupSDK *)sdk;
+- (void)userLoggedOut:(HKSetupSDK *)sdk;
 @end

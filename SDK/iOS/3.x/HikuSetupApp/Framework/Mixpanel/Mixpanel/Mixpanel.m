@@ -13,24 +13,38 @@
 #import <CoreTelephony/CTTelephonyNetworkInfo.h>
 #import <SystemConfiguration/SystemConfiguration.h>
 #import <UIKit/UIDevice.h>
+
 #import "Mixpanel.h"
+#import "MPLogger.h"
+#import "NSData+MPBase64.h"
+
+#if !defined(MIXPANEL_APP_EXTENSION)
+
 #import "MPABTestDesignerConnection.h"
-#import "MPCategoryHelpers.h"
+#import "UIView+MPHelpers.h"
 #import "MPDesignerEventBindingMessage.h"
 #import "MPDesignerSessionCollection.h"
 #import "MPEventBinding.h"
-#import "MPLogger.h"
 #import "MPNotification.h"
 #import "MPNotificationViewController.h"
 #import "MPSurveyNavigationController.h"
 #import "MPSwizzler.h"
 #import "MPVariant.h"
 #import "MPWebSocket.h"
-#import "NSData+MPBase64.h"
 
-#define VERSION @"2.6.2"
+#endif
 
-@interface Mixpanel () <UIAlertViewDelegate, MPSurveyNavigationControllerDelegate, MPNotificationViewControllerDelegate> {
+
+#define VERSION @"2.9.1"
+
+#if !defined(MIXPANEL_APP_EXTENSION)
+@interface Mixpanel () <UIAlertViewDelegate, MPSurveyNavigationControllerDelegate, MPNotificationViewControllerDelegate>
+
+#else
+@interface Mixpanel () <UIAlertViewDelegate>
+
+#endif
+{
     NSUInteger _flushInterval;
 }
 
@@ -54,15 +68,15 @@
 @property (nonatomic) BOOL decideResponseCached;
 
 @property (nonatomic, strong) NSArray *surveys;
-@property (nonatomic, strong) MPSurvey *currentlyShowingSurvey;
+@property (nonatomic, strong) id currentlyShowingSurvey;
 @property (nonatomic, strong) NSMutableSet *shownSurveyCollections;
 
 @property (nonatomic, strong) NSArray *notifications;
-@property (nonatomic, strong) MPNotification *currentlyShowingNotification;
-@property (nonatomic, strong) MPNotificationViewController *notificationViewController;
+@property (nonatomic, strong) id currentlyShowingNotification;
+@property (nonatomic, strong) UIViewController *notificationViewController;
 @property (nonatomic, strong) NSMutableSet *shownNotifications;
 
-@property (nonatomic, strong) MPABTestDesignerConnection *abtestDesignerConnection;
+@property (nonatomic, strong) id abtestDesignerConnection;
 @property (nonatomic, strong) NSSet *variants;
 @property (nonatomic, strong) NSSet *eventBindings;
 
@@ -78,37 +92,28 @@
 @property (nonatomic, copy) NSString *distinctId;
 @property (nonatomic, strong) NSDictionary *automaticPeopleProperties;
 
-- (id)initWithMixpanel:(Mixpanel *)mixpanel;
+- (instancetype)initWithMixpanel:(Mixpanel *)mixpanel;
 - (void)merge:(NSDictionary *)properties;
 
 @end
 
-static NSString *MPURLEncode(NSString *s)
-{
-    return (NSString *)CFBridgingRelease(CFURLCreateStringByAddingPercentEscapes(kCFAllocatorDefault, (CFStringRef)s, NULL, CFSTR("!*'();:@&=+$,/?%#[]"), kCFStringEncodingUTF8));
-}
-
 @implementation Mixpanel
 
-static void MixpanelReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReachabilityFlags flags, void *info)
-{
-    if (info != NULL && [(__bridge NSObject*)info isKindOfClass:[Mixpanel class]]) {
-        @autoreleasepool {
-            Mixpanel *mixpanel = (__bridge Mixpanel *)info;
-            [mixpanel reachabilityChanged:flags];
-        }
-    } else {
-        MixpanelError(@"reachability callback received unexpected info object");
-    }
-}
-
 static Mixpanel *sharedInstance = nil;
+
 
 + (Mixpanel *)sharedInstanceWithToken:(NSString *)apiToken launchOptions:(NSDictionary *)launchOptions
 {
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        sharedInstance = [[super alloc] initWithToken:apiToken launchOptions:launchOptions andFlushInterval:60];
+        
+#if defined(DEBUG)
+        const NSUInteger flushInterval = 1;
+#else
+        const NSUInteger flushInterval = 60;
+#endif
+        
+        sharedInstance = [[super alloc] initWithToken:apiToken launchOptions:launchOptions andFlushInterval:flushInterval];
     });
     return sharedInstance;
 }
@@ -150,6 +155,7 @@ static Mixpanel *sharedInstance = nil;
         self.checkForVariantsOnActive = YES;
         self.checkForSurveysOnActive = YES;
         self.miniNotificationPresentationTime = 6.0;
+        self.miniNotificationBackgroundColor = nil;
 
         self.distinctId = [self defaultDistinctId];
         self.superProperties = [NSMutableDictionary dictionary];
@@ -176,15 +182,22 @@ static Mixpanel *sharedInstance = nil;
         self.notifications = nil;
         self.variants = nil;
 
-        [self setupListeners];
+#if !defined(MIXPANEL_APP_EXTENSION)
+        [self setUpListeners];
+#endif
         [self unarchive];
+#if !defined(MIXPANEL_APP_EXTENSION)
         [self executeCachedVariants];
+        [self executeCachedEventBindings];
+#if defined(DEBUG) && !defined(DISABLE_MIXPANEL_AB_DESIGNER)
+        [self connectToABTestDesigner:YES];
+#endif
+#endif
 
         if (launchOptions && launchOptions[UIApplicationLaunchOptionsRemoteNotificationKey]) {
             [self trackPushNotification:launchOptions[UIApplicationLaunchOptionsRemoteNotificationKey] event:@"$app_open"];
         }
     }
-
     return self;
 }
 
@@ -209,172 +222,12 @@ static Mixpanel *sharedInstance = nil;
     }
 }
 
-- (void)setupListeners
-{
-    // wifi reachability
-    BOOL reachabilityOk = NO;
-    if ((_reachability = SCNetworkReachabilityCreateWithName(NULL, "api.mixpanel.com")) != NULL) {
-        SCNetworkReachabilityContext context = {0, (__bridge void*)self, NULL, NULL, NULL};
-        if (SCNetworkReachabilitySetCallback(_reachability, MixpanelReachabilityCallback, &context)) {
-            if (SCNetworkReachabilitySetDispatchQueue(_reachability, self.serialQueue)) {
-                reachabilityOk = YES;
-                MixpanelDebug(@"%@ successfully set up reachability callback", self);
-            } else {
-                // cleanup callback if setting dispatch queue failed
-                SCNetworkReachabilitySetCallback(_reachability, NULL, NULL);
-            }
-        }
-    }
-    if (!reachabilityOk) {
-        MixpanelError(@"%@ failed to set up reachability callback: %s", self, SCErrorString(SCError()));
-    }
-
-    NSNotificationCenter *notificationCenter = [NSNotificationCenter defaultCenter];
-
-    // cellular info
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 70000
-    if (floor(NSFoundationVersionNumber) > NSFoundationVersionNumber_iOS_6_1) {
-        [self setCurrentRadio];
-        [notificationCenter addObserver:self
-                               selector:@selector(setCurrentRadio)
-                                   name:CTRadioAccessTechnologyDidChangeNotification
-                                 object:nil];
-    }
-#endif
-
-    // Application lifecycle events
-    [notificationCenter addObserver:self
-                           selector:@selector(applicationWillTerminate:)
-                               name:UIApplicationWillTerminateNotification
-                             object:nil];
-    [notificationCenter addObserver:self
-                           selector:@selector(applicationWillResignActive:)
-                               name:UIApplicationWillResignActiveNotification
-                             object:nil];
-    [notificationCenter addObserver:self
-                           selector:@selector(applicationDidBecomeActive:)
-                               name:UIApplicationDidBecomeActiveNotification
-                             object:nil];
-    [notificationCenter addObserver:self
-                           selector:@selector(applicationDidEnterBackground:)
-                               name:UIApplicationDidEnterBackgroundNotification
-                             object:nil];
-    [notificationCenter addObserver:self
-                           selector:@selector(applicationWillEnterForeground:)
-                               name:UIApplicationWillEnterForegroundNotification
-                             object:nil];
-    [notificationCenter addObserver:self
-                           selector:@selector(appLinksNotificationRaised:)
-                               name:@"com.parse.bolts.measurement_event"
-                             object:nil];
-
-#ifndef DISABLE_MIXPANEL_AB_DESIGNER
-    dispatch_async(dispatch_get_main_queue(), ^{
-        UILongPressGestureRecognizer *recognizer = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(connectGestureRecognized:)];
-        recognizer.minimumPressDuration = 3;
-        recognizer.cancelsTouchesInView = NO;
-#if TARGET_IPHONE_SIMULATOR
-        recognizer.numberOfTouchesRequired = 2;
-#else
-        recognizer.numberOfTouchesRequired = 4;
-#endif
-        [[UIApplication sharedApplication].keyWindow addGestureRecognizer:recognizer];
-    });
-#endif
-}
-
-- (NSString *)description
-{
-    return [NSString stringWithFormat:@"<Mixpanel: %p %@>", self, self.apiToken];
-}
-
-- (NSString *)deviceModel
-{
-    size_t size;
-    sysctlbyname("hw.machine", NULL, &size, NULL, 0);
-    char answer[size];
-    sysctlbyname("hw.machine", answer, &size, NULL, 0);
-    NSString *results = @(answer);
-    return results;
-}
-
-- (NSString *)IFA
-{
-    NSString *ifa = nil;
-#ifndef MIXPANEL_NO_IFA
-    Class ASIdentifierManagerClass = NSClassFromString(@"ASIdentifierManager");
-    if (ASIdentifierManagerClass) {
-        SEL sharedManagerSelector = NSSelectorFromString(@"sharedManager");
-        id sharedManager = ((id (*)(id, SEL))[ASIdentifierManagerClass methodForSelector:sharedManagerSelector])(ASIdentifierManagerClass, sharedManagerSelector);
-        SEL advertisingIdentifierSelector = NSSelectorFromString(@"advertisingIdentifier");
-        NSUUID *uuid = ((NSUUID* (*)(id, SEL))[sharedManager methodForSelector:advertisingIdentifierSelector])(sharedManager, advertisingIdentifierSelector);
-        ifa = [uuid UUIDString];
-    }
-#endif
-    return ifa;
-}
-
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 70000
-- (void)setCurrentRadio
-{
-    dispatch_async(self.serialQueue, ^(){
-        NSMutableDictionary *properties = [self.automaticProperties mutableCopy];
-        properties[@"$radio"] = [self currentRadio];
-        self.automaticProperties = [properties copy];
-    });
-}
-
-- (NSString *)currentRadio
-{
-    NSString *radio = _telephonyInfo.currentRadioAccessTechnology;
-    if (!radio) {
-        radio = @"None";
-    } else if ([radio hasPrefix:@"CTRadioAccessTechnology"]) {
-        radio = [radio substringFromIndex:23];
-    }
-    return radio;
-}
-#endif
-
-- (NSString *)libVersion
-{
-    return VERSION;
-}
-
-- (NSDictionary *)collectAutomaticProperties
-{
-    NSMutableDictionary *p = [NSMutableDictionary dictionary];
-    UIDevice *device = [UIDevice currentDevice];
-    NSString *deviceModel = [self deviceModel];
-    CGSize size = [UIScreen mainScreen].bounds.size;
-    CTCarrier *carrier = [self.telephonyInfo subscriberCellularProvider];
-
-    // Use setValue semantics to avoid adding keys where value can be nil.
-    [p setValue:[[NSBundle mainBundle] infoDictionary][@"CFBundleVersion"] forKey:@"$app_version"];
-    [p setValue:[[NSBundle mainBundle] infoDictionary][@"CFBundleShortVersionString"] forKey:@"$app_release"];
-    [p setValue:[self IFA] forKey:@"$ios_ifa"];
-    [p setValue:carrier.carrierName forKey:@"$carrier"];
-
-    [p addEntriesFromDictionary:@{
-             @"mp_lib": @"iphone",
-             @"$lib_version": [self libVersion],
-             @"$manufacturer": @"Apple",
-             @"$os": [device systemName],
-             @"$os_version": [device systemVersion],
-             @"$model": deviceModel,
-             @"mp_device_model": deviceModel, //legacy
-             @"$screen_height": @((NSInteger)size.height),
-             @"$screen_width": @((NSInteger)size.width)
-    }];
-    return [p copy];
-}
-
-+ (BOOL)inBackground
-{
-    return [UIApplication sharedApplication].applicationState == UIApplicationStateBackground;
-}
-
 #pragma mark - Encoding/decoding utilities
+
+static __unused NSString *MPURLEncode(NSString *s)
+{
+    return (NSString *)CFBridgingRelease(CFURLCreateStringByAddingPercentEscapes(kCFAllocatorDefault, (CFStringRef)s, NULL, CFSTR("!*'();:@&=+$,/?%#[]"), kCFStringEncodingUTF8));
+}
 
 - (NSData *)JSONSerializeObject:(id)obj
 {
@@ -547,7 +400,7 @@ static Mixpanel *sharedInstance = nil;
         p[@"time"] = epochSeconds;
         if (eventStartTime) {
             [self.timedEvents removeObjectForKey:event];
-            p[@"$duration"] = [NSString stringWithFormat:@"%.3f", epochInterval - [eventStartTime doubleValue]];
+            p[@"$duration"] = @([[NSString stringWithFormat:@"%.3f", epochInterval - [eventStartTime doubleValue]] floatValue]);
         }
         if (self.nameTag) {
             p[@"mp_name_tag"] = self.nameTag;
@@ -569,6 +422,32 @@ static Mixpanel *sharedInstance = nil;
             [self archiveEvents];
         }
     });
+#if defined(MIXPANEL_APP_EXTENSION)
+    [self flush];
+#endif
+}
+
+
+- (void)trackPushNotification:(NSDictionary *)userInfo event:(NSString *)event
+{
+    MixpanelDebug(@"%@ tracking push payload %@", self, userInfo);
+
+    if (userInfo && userInfo[@"mp"]) {
+        NSDictionary *mpPayload = userInfo[@"mp"];
+
+        if ([mpPayload isKindOfClass:[NSDictionary class]] && mpPayload[@"m"] && mpPayload[@"c"]) {
+            [self track:event properties:@{@"campaign_id": mpPayload[@"c"],
+                                           @"message_id": mpPayload[@"m"],
+                                           @"message_type": @"push"}];
+        } else {
+            MixpanelError(@"%@ malformed mixpanel push payload %@", self, mpPayload);
+        }
+    }
+}
+
+- (void)trackPushNotification:(NSDictionary *)userInfo
+{
+    [self trackPushNotification:userInfo event:@"$campaign_received"];
 }
 
 - (void)registerSuperProperties:(NSDictionary *)properties
@@ -666,6 +545,9 @@ static Mixpanel *sharedInstance = nil;
         self.eventsQueue = [NSMutableArray array];
         self.peopleQueue = [NSMutableArray array];
         self.timedEvents = [NSMutableDictionary dictionary];
+        self.shownSurveyCollections = [NSMutableSet set];
+        self.shownNotifications = [NSMutableSet set];
+        self.decideResponseCached = NO;
         [self archive];
     });
 }
@@ -715,6 +597,11 @@ static Mixpanel *sharedInstance = nil;
 
 - (void)flush
 {
+    [self flushWithCompletion:nil];
+}
+
+- (void)flushWithCompletion:(void (^)())handler
+{
     dispatch_async(self.serialQueue, ^{
         MixpanelDebug(@"%@ flush starting", self);
 
@@ -726,6 +613,11 @@ static Mixpanel *sharedInstance = nil;
 
         [self flushEvents];
         [self flushPeople];
+        
+        if (handler) {
+            [self archive];
+            dispatch_async(dispatch_get_main_queue(), handler);
+        }
 
         MixpanelDebug(@"%@ flush complete", self);
     });
@@ -770,29 +662,10 @@ static Mixpanel *sharedInstance = nil;
         NSString *response = [[NSString alloc] initWithData:responseData encoding:NSUTF8StringEncoding];
         if ([response intValue] == 0) {
             MixpanelError(@"%@ %@ api rejected some items", self, endpoint);
-        };
+        }
 
         [queue removeObjectsInArray:batch];
     }
-}
-
-- (void)updateNetworkActivityIndicator:(BOOL)on
-{
-    if (_showNetworkActivityIndicator) {
-        [UIApplication sharedApplication].networkActivityIndicatorVisible = on;
-    }
-}
-
-- (void)reachabilityChanged:(SCNetworkReachabilityFlags)flags
-{
-    // this should be run in the serial queue. the reason we don't dispatch_async here
-    // is because it's only ever called by the reachability callback, which is already
-    // set to run on the serial queue. see SCNetworkReachabilitySetDispatchQueue in init
-    BOOL wifi = (flags & kSCNetworkReachabilityFlagsReachable) && !(flags & kSCNetworkReachabilityFlagsIsWWAN);
-    NSMutableDictionary *properties = [self.automaticProperties mutableCopy];
-    properties[@"$wifi"] = wifi ? @YES : @NO;
-    self.automaticProperties = [properties copy];
-    MixpanelDebug(@"%@ reachability changed, wifi=%d", self, wifi);
 }
 
 - (NSURLRequest *)apiRequestWithEndpoint:(NSString *)endpoint andBody:(NSString *)body
@@ -981,14 +854,242 @@ static Mixpanel *sharedInstance = nil;
     if (!self.eventBindings) {
         self.eventBindings = [NSSet set];
     }
-    for (id binding in self.eventBindings) {
-        if ([binding isKindOfClass:[MPEventBinding class]]) {
-            [binding execute];
+}
+
+#pragma mark - Application Helpers
+
+- (NSString *)description
+{
+    return [NSString stringWithFormat:@"<Mixpanel: %p %@>", self, self.apiToken];
+}
+
+- (NSString *)deviceModel
+{
+    size_t size;
+    sysctlbyname("hw.machine", NULL, &size, NULL, 0);
+    char answer[size];
+    sysctlbyname("hw.machine", answer, &size, NULL, 0);
+    NSString *results = @(answer);
+    return results;
+}
+
+- (NSString *)watchModel
+{
+    NSString *model = nil;
+    Class WKInterfaceDeviceClass = NSClassFromString(@"WKInterfaceDevice");
+    if (WKInterfaceDeviceClass) {
+        SEL currentDeviceSelector = NSSelectorFromString(@"currentDevice");
+        id device = ((id (*)(id, SEL))[WKInterfaceDeviceClass methodForSelector:currentDeviceSelector])(WKInterfaceDeviceClass, currentDeviceSelector);
+        SEL screenBoundsSelector = NSSelectorFromString(@"screenBounds");
+        if (device && [device respondsToSelector:screenBoundsSelector]) {
+            NSInvocation *screenBoundsInvocation = [NSInvocation invocationWithMethodSignature:[device methodSignatureForSelector:screenBoundsSelector]];
+            [screenBoundsInvocation setSelector:screenBoundsSelector];
+            [screenBoundsInvocation invokeWithTarget:device];
+            CGRect screenBounds;
+            [screenBoundsInvocation getReturnValue:(void *)&screenBounds];
+             if(screenBounds.size.width == 136.0f){
+                model = @"Apple Watch 38mm";
+            } else if(screenBounds.size.width == 156.0f) {
+                model = @"Apple Watch 42mm";
+            } else {
+                model = @"Apple Watch";
+            }
         }
+    }
+    return model;
+}
+
+- (NSString *)IFA
+{
+    NSString *ifa = nil;
+#if !defined(MIXPANEL_NO_IFA)
+    Class ASIdentifierManagerClass = NSClassFromString(@"ASIdentifierManager");
+    if (ASIdentifierManagerClass) {
+        SEL sharedManagerSelector = NSSelectorFromString(@"sharedManager");
+        id sharedManager = ((id (*)(id, SEL))[ASIdentifierManagerClass methodForSelector:sharedManagerSelector])(ASIdentifierManagerClass, sharedManagerSelector);
+        SEL advertisingIdentifierSelector = NSSelectorFromString(@"advertisingIdentifier");
+        NSUUID *uuid = ((NSUUID* (*)(id, SEL))[sharedManager methodForSelector:advertisingIdentifierSelector])(sharedManager, advertisingIdentifierSelector);
+        ifa = [uuid UUIDString];
+    }
+#endif
+    return ifa;
+}
+
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 70000
+- (void)setCurrentRadio
+{
+    dispatch_async(self.serialQueue, ^(){
+        NSMutableDictionary *properties = [self.automaticProperties mutableCopy];
+        properties[@"$radio"] = [self currentRadio];
+        self.automaticProperties = [properties copy];
+    });
+}
+
+- (NSString *)currentRadio
+{
+    NSString *radio = _telephonyInfo.currentRadioAccessTechnology;
+    if (!radio) {
+        radio = @"None";
+    } else if ([radio hasPrefix:@"CTRadioAccessTechnology"]) {
+        radio = [radio substringFromIndex:23];
+    }
+    return radio;
+}
+#endif
+
+- (NSString *)libVersion
+{
+    return VERSION;
+}
+
+- (NSDictionary *)collectAutomaticProperties
+{
+    NSMutableDictionary *p = [NSMutableDictionary dictionary];
+    UIDevice *device = [UIDevice currentDevice];
+    NSString *deviceModel = [self deviceModel];
+    CGSize size = [UIScreen mainScreen].bounds.size;
+    CTCarrier *carrier = [self.telephonyInfo subscriberCellularProvider];
+
+    // Use setValue semantics to avoid adding keys where value can be nil.
+    [p setValue:[[NSBundle mainBundle] infoDictionary][@"CFBundleVersion"] forKey:@"$app_version"];
+    [p setValue:[[NSBundle mainBundle] infoDictionary][@"CFBundleShortVersionString"] forKey:@"$app_release"];
+    [p setValue:[self IFA] forKey:@"$ios_ifa"];
+    [p setValue:carrier.carrierName forKey:@"$carrier"];
+    [p setValue:[self watchModel] forKey:@"$watch_model"];
+
+    [p addEntriesFromDictionary:@{
+                                  @"mp_lib": @"iphone",
+                                  @"$lib_version": [self libVersion],
+                                  @"$manufacturer": @"Apple",
+                                  @"$os": [device systemName],
+                                  @"$os_version": [device systemVersion],
+                                  @"$model": deviceModel,
+                                  @"mp_device_model": deviceModel, //legacy
+                                  @"$screen_height": @((NSInteger)size.height),
+                                  @"$screen_width": @((NSInteger)size.width)
+                                  }];
+    return [p copy];
+}
+
++ (BOOL)inBackground
+{
+#if !defined(MIXPANEL_APP_EXTENSION)
+    return [UIApplication sharedApplication].applicationState == UIApplicationStateBackground;
+#else
+    return NO;
+#endif
+}
+
+- (void)updateNetworkActivityIndicator:(BOOL)on
+{
+#if !defined(MIXPANEL_APP_EXTENSION)
+    if (_showNetworkActivityIndicator) {
+        [UIApplication sharedApplication].networkActivityIndicatorVisible = on;
+    }
+#endif
+}
+
+#if !defined(MIXPANEL_APP_EXTENSION)
+
+#pragma mark - UIApplication Events
+
+- (void)setUpListeners
+{
+    // wifi reachability
+    BOOL reachabilityOk = NO;
+    if ((_reachability = SCNetworkReachabilityCreateWithName(NULL, "api.mixpanel.com")) != NULL) {
+        SCNetworkReachabilityContext context = {0, (__bridge void*)self, NULL, NULL, NULL};
+        if (SCNetworkReachabilitySetCallback(_reachability, MixpanelReachabilityCallback, &context)) {
+            if (SCNetworkReachabilitySetDispatchQueue(_reachability, self.serialQueue)) {
+                reachabilityOk = YES;
+                MixpanelDebug(@"%@ successfully set up reachability callback", self);
+            } else {
+                // cleanup callback if setting dispatch queue failed
+                SCNetworkReachabilitySetCallback(_reachability, NULL, NULL);
+            }
+        }
+    }
+    if (!reachabilityOk) {
+        MixpanelError(@"%@ failed to set up reachability callback: %s", self, SCErrorString(SCError()));
+    }
+
+    NSNotificationCenter *notificationCenter = [NSNotificationCenter defaultCenter];
+
+    // cellular info
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 70000
+    if (floor(NSFoundationVersionNumber) > NSFoundationVersionNumber_iOS_6_1) {
+        [self setCurrentRadio];
+        [notificationCenter addObserver:self
+                               selector:@selector(setCurrentRadio)
+                                   name:CTRadioAccessTechnologyDidChangeNotification
+                                 object:nil];
+    }
+#endif
+
+    // Application lifecycle events
+    [notificationCenter addObserver:self
+                           selector:@selector(applicationWillTerminate:)
+                               name:UIApplicationWillTerminateNotification
+                             object:nil];
+    [notificationCenter addObserver:self
+                           selector:@selector(applicationWillResignActive:)
+                               name:UIApplicationWillResignActiveNotification
+                             object:nil];
+    [notificationCenter addObserver:self
+                           selector:@selector(applicationDidBecomeActive:)
+                               name:UIApplicationDidBecomeActiveNotification
+                             object:nil];
+    [notificationCenter addObserver:self
+                           selector:@selector(applicationDidEnterBackground:)
+                               name:UIApplicationDidEnterBackgroundNotification
+                             object:nil];
+    [notificationCenter addObserver:self
+                           selector:@selector(applicationWillEnterForeground:)
+                               name:UIApplicationWillEnterForegroundNotification
+                             object:nil];
+    [notificationCenter addObserver:self
+                           selector:@selector(appLinksNotificationRaised:)
+                               name:@"com.parse.bolts.measurement_event"
+                             object:nil];
+
+#if !defined(DISABLE_MIXPANEL_AB_DESIGNER)
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UILongPressGestureRecognizer *recognizer = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(connectGestureRecognized:)];
+        recognizer.minimumPressDuration = 3;
+        recognizer.cancelsTouchesInView = NO;
+#if TARGET_IPHONE_SIMULATOR
+        recognizer.numberOfTouchesRequired = 2;
+#else
+        recognizer.numberOfTouchesRequired = 4;
+#endif
+        [[UIApplication sharedApplication].keyWindow addGestureRecognizer:recognizer];
+    });
+#endif
+}
+
+static void MixpanelReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReachabilityFlags flags, void *info)
+{
+    if (info != NULL && [(__bridge NSObject*)info isKindOfClass:[Mixpanel class]]) {
+        @autoreleasepool {
+            Mixpanel *mixpanel = (__bridge Mixpanel *)info;
+            [mixpanel reachabilityChanged:flags];
+        }
+    } else {
+        MixpanelError(@"reachability callback received unexpected info object");
     }
 }
 
-#pragma mark - UIApplication notifications
+- (void)reachabilityChanged:(SCNetworkReachabilityFlags)flags
+{
+    // this should be run in the serial queue. the reason we don't dispatch_async here
+    // is because it's only ever called by the reachability callback, which is already
+    // set to run on the serial queue. see SCNetworkReachabilitySetDispatchQueue in init
+    BOOL wifi = (flags & kSCNetworkReachabilityFlagsReachable) && !(flags & kSCNetworkReachabilityFlagsIsWWAN);
+    NSMutableDictionary *properties = [self.automaticProperties mutableCopy];
+    properties[@"$wifi"] = wifi ? @YES : @NO;
+    self.automaticProperties = [properties copy];
+    MixpanelDebug(@"%@ reachability changed, wifi=%d", self, wifi);
+}
 
 - (void)applicationDidBecomeActive:(NSNotification *)notification
 {
@@ -1074,28 +1175,6 @@ static Mixpanel *sharedInstance = nil;
     });
 }
 
-- (void)trackPushNotification:(NSDictionary *)userInfo event:(NSString *)event
-{
-    MixpanelDebug(@"%@ tracking push payload %@", self, userInfo);
-
-    if (userInfo && userInfo[@"mp"]) {
-        NSDictionary *mpPayload = userInfo[@"mp"];
-
-        if ([mpPayload isKindOfClass:[NSDictionary class]] && mpPayload[@"m"] && mpPayload[@"c"]) {
-            [self track:event properties:@{@"campaign_id": mpPayload[@"c"],
-                                           @"message_id": mpPayload[@"m"],
-                                           @"message_type": @"push"}];
-        } else {
-            MixpanelError(@"%@ malformed mixpanel push payload %@", self, mpPayload);
-        }
-    }
-}
-
-- (void)trackPushNotification:(NSDictionary *)userInfo
-{
-    [self trackPushNotification:userInfo event:@"$campaign_received"];
-}
-
 - (void)appLinksNotificationRaised:(NSNotification *)notification
 {
     NSDictionary *eventMap = @{@"al_nav_out": @"$al_nav_out",
@@ -1117,6 +1196,22 @@ static Mixpanel *sharedInstance = nil;
         controller = controller.presentedViewController;
     }
     return controller;
+}
+
++ (BOOL)canPresentFromViewController:(UIViewController *)viewController
+{
+    // This fixes the NSInternalInconsistencyException caused when we try present a
+    // survey on a viewcontroller that is itself being presented.
+    if ([viewController isBeingPresented] || [viewController isBeingDismissed]) {
+        return NO;
+    }
+
+    Class UIAlertControllerClass = NSClassFromString(@"UIAlertController");
+    if (UIAlertControllerClass && [viewController isKindOfClass:UIAlertControllerClass]) {
+        return NO;
+    }
+
+    return YES;
 }
 
 - (void)checkForDecideResponseWithCompletion:(void (^)(NSArray *surveys, NSArray *notifications, NSSet *variants, NSSet *eventBindings))completion
@@ -1227,7 +1322,7 @@ static Mixpanel *sharedInstance = nil;
             NSMutableSet *parsedEventBindings = [NSMutableSet set];
             if (rawEventBindings && [rawEventBindings isKindOfClass:[NSArray class]]) {
                 for (id obj in rawEventBindings) {
-                    MPEventBinding *binder = [MPEventBinding bindngWithJSONObject:obj];
+                    MPEventBinding *binder = [MPEventBinding bindingWithJSONObject:obj];
                     [binder execute];
                     if (binder) {
                         [parsedEventBindings addObject:binder];
@@ -1312,11 +1407,8 @@ static Mixpanel *sharedInstance = nil;
 {
     UIViewController *presentingViewController = [Mixpanel topPresentedViewController];
 
-    // This fixes the NSInternalInconsistencyException caused when we try present a
-    // survey on a viewcontroller that is itself being presented.
-    if (![presentingViewController isBeingPresented] && ![presentingViewController isBeingDismissed]) {
-
-        UIStoryboard *storyboard = [UIStoryboard storyboardWithName:@"MPSurvey" bundle:nil];
+    if ([[self class] canPresentFromViewController:presentingViewController]) {
+        UIStoryboard *storyboard = [UIStoryboard storyboardWithName:@"MPSurvey" bundle:[NSBundle bundleForClass:Mixpanel.class]];
         MPSurveyNavigationController *controller = [storyboard instantiateViewControllerWithIdentifier:@"MPSurveyNavigationController"];
         controller.survey = survey;
         controller.delegate = self;
@@ -1433,10 +1525,12 @@ static Mixpanel *sharedInstance = nil;
                 [self.people append:@{@"$answers": answers[i]}];
             }
         }
+        
+        dispatch_async(_serialQueue, ^{
+            [self flushPeople];
+        });
     }
 }
-
-#pragma mark Surveys (UIAlertViewDelegate)
 
 - (void)alertView:(UIAlertView *)alertView didDismissWithButtonIndex:(NSInteger)buttonIndex
 {
@@ -1450,7 +1544,7 @@ static Mixpanel *sharedInstance = nil;
     }
 }
 
-#pragma mark - Notifications
+#pragma mark - Mixpanel Notifications
 
 - (void)showNotification
 {
@@ -1516,6 +1610,10 @@ static Mixpanel *sharedInstance = nil;
             if (shown && ![notification.title isEqualToString:@"$ignore"]) {
                 [self markNotificationShown:notification];
             }
+
+            if (!shown) {
+                self.currentlyShowingNotification = nil;
+            }
         }
     });
 }
@@ -1524,8 +1622,8 @@ static Mixpanel *sharedInstance = nil;
 {
     UIViewController *presentingViewController = [Mixpanel topPresentedViewController];
 
-    if (![presentingViewController isBeingPresented] && ![presentingViewController isBeingDismissed]) {
-        UIStoryboard *storyboard = [UIStoryboard storyboardWithName:@"MPNotification" bundle:nil];
+    if ([[self class] canPresentFromViewController:presentingViewController]) {
+        UIStoryboard *storyboard = [UIStoryboard storyboardWithName:@"MPNotification" bundle:[NSBundle bundleForClass:Mixpanel.class]];
         MPTakeoverNotificationViewController *controller = [storyboard instantiateViewControllerWithIdentifier:@"MPNotificationViewController"];
 
         controller.backgroundImage = [presentingViewController.view mp_snapshotImage];
@@ -1545,6 +1643,7 @@ static Mixpanel *sharedInstance = nil;
     MPMiniNotificationViewController *controller = [[MPMiniNotificationViewController alloc] init];
     controller.notification = notification;
     controller.delegate = self;
+    controller.backgroundColor = self.miniNotificationBackgroundColor;
     self.notificationViewController = controller;
 
     [controller showWithAnimation];
@@ -1616,7 +1715,7 @@ static Mixpanel *sharedInstance = nil;
     [self trackNotification:notification event:@"$campaign_delivery"];
 }
 
-#pragma mark - A/B Testing (Designer)
+#pragma mark - Mixpanel A/B Testing (Designer)
 
 - (void)connectGestureRecognized:(id)sender
 {
@@ -1627,7 +1726,12 @@ static Mixpanel *sharedInstance = nil;
 
 - (void)connectToABTestDesigner
 {
-    if (self.abtestDesignerConnection && self.abtestDesignerConnection.connected) {
+    [self connectToABTestDesigner:NO];
+}
+
+- (void)connectToABTestDesigner:(BOOL)reconnect
+{
+    if ([self.abtestDesignerConnection isKindOfClass:[MPABTestDesignerConnection class]] && ((MPABTestDesignerConnection *)self.abtestDesignerConnection).connected) {
         MixpanelError(@"A/B test designer connection already exists");
     } else {
         static NSUInteger oldInterval;
@@ -1654,7 +1758,6 @@ static Mixpanel *sharedInstance = nil;
 
                 [MPSwizzler swizzleSelector:@selector(track:properties:) onClass:[Mixpanel class] withBlock:block named:@"track_properties"];
             }
-
         };
         void (^disconnectCallback)(void) = ^{
             __strong Mixpanel *strongSelf = weakSelf;
@@ -1671,12 +1774,13 @@ static Mixpanel *sharedInstance = nil;
             }
         };
         self.abtestDesignerConnection = [[MPABTestDesignerConnection alloc] initWithURL:designerURL
+                                                                             keepTrying:reconnect
                                                                         connectCallback:connectCallback
                                                                         disconnectCallback:disconnectCallback];
     }
 }
 
-#pragma mark A/B Testing (Experiment)
+#pragma mark - Mixpanel A/B Testing (Experiment)
 
 - (void)executeCachedVariants {
     for (MPVariant *variant in self.variants) {
@@ -1689,7 +1793,6 @@ static Mixpanel *sharedInstance = nil;
 {
     MixpanelDebug(@"%@ marking variant %@ shown for experiment %@", self, @(variant.ID), @(variant.experimentID));
     NSDictionary *shownVariant = @{[@(variant.experimentID) stringValue]: @(variant.ID)};
-    [self track:@"$experiment_started" properties:@{@"$experiment_id" : @(variant.experimentID), @"$variant_id": @(variant.ID)}];
     if (self.people.distinctId) {
         [self.people merge:@{@"$experiments": shownVariant}];
     }
@@ -1704,17 +1807,42 @@ static Mixpanel *sharedInstance = nil;
             [self archiveProperties];
         }
     });
+
+    [self track:@"$experiment_started" properties:@{@"$experiment_id" : @(variant.experimentID), @"$variant_id": @(variant.ID)}];
 }
 
-- (void)joinExperiments
+- (void)joinExperimentsWithCallback:(void(^)())experimentsLoadedCallback
 {
     [self checkForVariantsWithCompletion:^(NSSet *newVariants) {
         for (MPVariant *variant in newVariants) {
             [variant execute];
             [self markVariantRun:variant];
         }
+
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (experimentsLoadedCallback) {
+                experimentsLoadedCallback();
+            }
+        });
     }];
 }
+
+- (void)joinExperiments
+{
+    [self joinExperimentsWithCallback:nil];
+}
+
+#pragma mark - Mixpanel Event Bindings
+
+- (void)executeCachedEventBindings {
+    for (id binding in self.eventBindings) {
+        if ([binding isKindOfClass:[MPEventBinding class]]) {
+            [binding execute];
+        }
+    }
+}
+
+#endif
 
 @end
 
@@ -1722,7 +1850,7 @@ static Mixpanel *sharedInstance = nil;
 
 @implementation MixpanelPeople
 
-- (id)initWithMixpanel:(Mixpanel *)mixpanel
+- (instancetype)initWithMixpanel:(Mixpanel *)mixpanel
 {
     if (self = [self init]) {
         self.mixpanel = mixpanel;
@@ -1789,6 +1917,9 @@ static Mixpanel *sharedInstance = nil;
                 [strongMixpanel archivePeople];
             }
         });
+#if defined(MIXPANEL_APP_EXTENSION)
+        [strongMixpanel flush];
+#endif
     }
 }
 
