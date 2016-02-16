@@ -82,3 +82,4 @@ v3.2.5 (January 25th, 2016 PST):
 - Updated the setup application's third-party libraries (more details in the documentation)
 - Fixed truncated strings on smaller iDevices (e.g. iPhone 4S)
 - Updated French-localized strings
+- Reduced the SDK file size significantly
