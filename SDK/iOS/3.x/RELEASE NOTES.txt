@@ -76,7 +76,6 @@ v3.2.4 (June 18th, 2015 PST):
 - Shortened the pre-BlinkUp time
 
 v3.2.5 (January 25th, 2016 PST):
-- Bumped up the minimum supported iOS version to 8.2
 - Added a new API to directly create a user account or log an existing user in (more details in the documentation and an example in the setup application)
 - Added a new delegate method that's fired when a user logs out (more details in the documentation and an example in the setup application)
 - Updated the setup application's third-party libraries (more details in the documentation)

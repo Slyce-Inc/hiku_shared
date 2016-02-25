@@ -1230,7 +1230,7 @@
 					"$(PROJECT_DIR)/Framework/**",
 					"$(PROJECT_DIR)/HKSetupSDK/**",
 				);
-				IPHONEOS_DEPLOYMENT_TARGET = 8.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
 				LIBRARY_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/Framework/**",
 					"$(PROJECT_DIR)/HKSetupSDK/**",
@@ -1277,7 +1277,7 @@
 					"$(PROJECT_DIR)/Framework/**",
 					"$(PROJECT_DIR)/HKSetupSDK/**",
 				);
-				IPHONEOS_DEPLOYMENT_TARGET = 8.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
 				LIBRARY_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/Framework/**",
 					"$(PROJECT_DIR)/HKSetupSDK/**",
