@@ -44,7 +44,7 @@
 	<key>DTXcodeBuild</key>
 	<string>7C1002</string>
 	<key>MinimumOSVersion</key>
-	<string>7.0</string>
+	<string>7.1</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2014 hiku labs, inc. All rights reserved.</string>
 	<key>UIDeviceFamily</key>

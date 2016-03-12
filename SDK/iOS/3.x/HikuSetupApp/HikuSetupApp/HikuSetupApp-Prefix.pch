@@ -10,6 +10,14 @@
 #warning "This project uses features only available in iOS SDK 5.0 and later."
 #endif
 
+#ifndef TARGET_OS_IOS
+#define TARGET_OS_IOS TARGET_OS_IPHONE
+#endif
+
+#ifndef TARGET_OS_WATCH
+#define TARGET_OS_WATCH 0
+#endif
+
 #ifdef __OBJC__
     #import <UIKit/UIKit.h>
     #import <Foundation/Foundation.h>
