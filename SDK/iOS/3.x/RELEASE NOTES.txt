@@ -82,3 +82,4 @@ v3.2.5 (January 25th, 2016 PST):
 - Fixed truncated strings on smaller iDevices (e.g. iPhone 4S)
 - Updated French-localized strings
 - Reduced the SDK file size significantly (videos are now streamed and progressively cached on-device)
+- Localized the "Place hiku here" video (in the screen just before BlinkUp)
