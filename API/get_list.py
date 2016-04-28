@@ -63,7 +63,7 @@ def addAPIParams(params, app_id, shared):
 # @return the response from the server, it would either contain a list JSON
 #         if successful, otherwise an error JSON
 def getList(token):
-    param = {}
+    param = {"token":toen}
     
     param = addAPIParams(param,APP_ID, SHARED)
     headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "application/json"}
