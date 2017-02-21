@@ -1,0 +1,7 @@
+platform :ios, '8.2'
+
+target :'HikuSetupApp' do
+  pod 'FBSDKShareKit', '~> 4.18'
+  pod 'AFNetworking'
+  pod 'AFNetworkActivityLogger', :git => 'https://github.com/AFNetworking/AFNetworkActivityLogger.git', :branch => '3_0_0'
+end

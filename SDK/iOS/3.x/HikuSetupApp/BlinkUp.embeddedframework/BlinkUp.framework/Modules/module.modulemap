@@ -1,0 +1,14 @@
+framework module BlinkUp {
+  umbrella header "BlinkUp.h"
+
+  export *
+  module * { export * }
+  
+  link framework "AVFoundation"
+  link framework "CoreGraphics"
+  link framework "Foundation"
+  link framework "OpenGLES"
+  link framework "QuartzCore"
+  link framework "Security"
+  link framework "SystemConfiguration"
+}
