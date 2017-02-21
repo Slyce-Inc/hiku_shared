@@ -34,3 +34,14 @@ Building HikuSetupApp
     * select type of device to build for (e.g., simulator or connected iPhone)
     * build [there will be some Xcode warnings, which you may ignore]
     * run
+
+
+
+Running HKSetupApp
+-----------------
+1. Build HKSetupApp for a device, such as an iPhone 6.
+2. Run the app
+3. You can login a new user by typing in a username and password, then tapping on the "Create or Login to Account" button. Once this is done, the login information will be retained until you tap on the "Logout" button.
+4. Once you are logged in you can set up a Hiku device by tapping on the "Start Setup" button. This will guide you to set up a WiFi connection and attach to the device.
+
+
